@@ -39,6 +39,7 @@ def main(run_dir):
     scenes = {t["scene"] for t in report["tasks"]}
     refs = [r for t in insights.get("takeaways", []) for r in t.get("refs", [])]
     refs += [r for a in insights.get("anomalies", []) for r in a.get("refs", [])]
+    refs += [r for t in insights.get("profiling_takeaways", []) for r in t.get("refs", [])]
     refs += list(insights.get("variant_notes", {})) + insights.get("featured", [])
     au = insights.get("author") or {}
     refs += [c["ref"] for c in au.get("clips", [])]
@@ -61,7 +62,9 @@ def main(run_dir):
     for m in media.values():
         files[m["src"]] = str(run / m["src"])
         files[m["poster"]] = str(run / m["poster"])
-    for p in report.get("figures", {}).values():
+    for name, p in report.get("figures", {}).items():
+        if name == "cpu_gpu_trace" and report.get("trace"):
+            continue  # the page draws the trace from profile_trace.json instead
         files[p] = str(run / p)
     for t in report["tasks"]:
         for s in t["strategies"]:

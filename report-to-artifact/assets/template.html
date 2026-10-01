@@ -196,6 +196,13 @@ table { border-collapse: collapse; width: 100%; }
 .task-head h3 { font: 600 18px var(--f-mono); letter-spacing: 0; }
 .task-head h3 span { color: var(--muted); font-weight: 400; }
 .task-head .instr { font-size: 16px; margin-top: 4px; }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 8px; font: 400 12px var(--f-mono); }
+.chain .lbl { font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.chain .st { border: 1px solid var(--line-2); border-radius: 4px; padding: 2px 7px; background: var(--surface); color: var(--ink); white-space: nowrap; }
+.chain .ar { color: var(--muted); }
+.chain .st.done { background: var(--sunk); }
+.chain .st.stop { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); font-weight: 500; }
+.chain .st.todo { color: var(--muted); border-style: dashed; }
 .task-head .setup { font-size: 13px; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-2); }
 .task-head .setup .bad { color: var(--bad-ink); font-weight: 500; }
 .task-head .setup .good { color: var(--ok-ink); font-weight: 500; }
@@ -376,6 +383,47 @@ details.more > div { padding: 0 16px 14px; }
 .wrow.grp:hover { background: none; }
 .wrow.grp .tm { color: var(--ink-2); }
 
+/* ---------- profiler trace */
+.tl svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.tl svg text { fill: var(--ink-2); font-family: var(--f-body); }
+.tl .lane-lbl { font: 500 10.5px var(--f-mono); fill: var(--muted) !important; }
+.tl .seg { cursor: default; }
+.tl .seg.v { cursor: pointer; }
+.tl .seg:hover { filter: brightness(1.12); }
+.tl .xh { stroke: var(--ink); stroke-width: 1; pointer-events: none; opacity: 0; }
+.tl-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 18px; margin-bottom: 6px; }
+.tl-head h3 { font-size: 17px; }
+.ovh { margin-top: 18px; }
+.hbars { display: grid; gap: 6px; }
+.hb { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) 64px; gap: 12px; align-items: center; font-size: 13px; border: 0; background: none; padding: 3px 4px; border-radius: 4px; text-align: left; width: 100%; }
+.hb:hover { background: var(--sunk); }
+.hb .nm { font: 500 12.5px var(--f-mono); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb .nm small { font: 400 11.5px var(--f-body); color: var(--muted); margin-left: 6px; }
+.hb .track { display: flex; gap: 2px; height: 14px; min-width: 0; }
+.hb .track span { background: var(--c); border-radius: 2px; min-width: 2px; }
+.hb .track span:first-child { border-radius: 4px 2px 2px 4px; }
+.hb .track span:last-child { border-radius: 2px 4px 4px 2px; }
+.hb .tot { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.hb .out { grid-column: 2 / 4; font-size: 12px; color: var(--ink-2); margin-top: -3px; }
+.hb .out .bad { color: var(--bad-ink); font-weight: 500; }
+.hb .out .good { color: var(--ok-ink); font-weight: 500; }
+.hb.grp { font: 600 11px var(--f-body); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 10px; grid-template-columns: 1fr; }
+.hb.grp:hover { background: none; }
+.hb i.dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--c); margin-right: 6px; vertical-align: 1px; }
+.hot { font-size: 13px; min-width: 720px; }
+.hbars.pg .hb { grid-template-columns: minmax(150px, 300px) minmax(0, 1fr) 72px; }
+.hot td, .hot th { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-variant-numeric: tabular-nums; }
+.hot thead th { font: 500 11px var(--f-body); color: var(--muted); text-align: left; }
+.hot td.r, .hot th.r { text-align: right; white-space: nowrap; }
+.hot .fn { font: 400 12px var(--f-mono); overflow-wrap: anywhere; }
+.hot .fn small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+.hot .kind { font: 500 11px var(--f-mono); border: 1px solid var(--line-2); border-radius: 3px; padding: 1px 5px; white-space: nowrap; }
+.hot .sh { display: inline-grid; grid-template-columns: 60px 42px; gap: 8px; align-items: center; }
+.hot .sh .m { height: 5px; border-radius: 3px; background: var(--sunk); overflow: hidden; }
+.hot .sh .m span { display: block; height: 100%; background: var(--ink-2); border-radius: 3px; }
+.two { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 18px; margin-top: 18px; align-items: start; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+
 /* ---------- glossary */
 .checks { display: grid; gap: 10px; }
 .check { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
@@ -492,7 +540,29 @@ footer { padding-block: 26px 40px; font-size: 12px; color: var(--muted); }
       <div class="kpis" id="prof-kpis" style="margin-top:0"></div>
       <div class="callout" id="bneck"></div>
       <div class="anote" id="au-prof" hidden style="margin:-4px 0 18px"></div>
-      <div class="wheels">
+      <div id="trace-sec" hidden>
+        <div class="chartbox tl" style="padding-bottom:14px">
+          <div class="tl-head"><h3>The run, second by second</h3><div class="legend" id="tl-legend" style="margin-top:0"></div></div>
+          <p class="cap2" style="margin:0 0 10px">From <span class="mono">profile_trace.json</span>. Top: CPU (all cores) and GPU busy, sampled once a second, then GPU memory. Below: what the evaluator was doing, the setup stages, and each rollout and video worker. Hatched is start-up (Isaac boot, stage load, cuRobo warm-up). Coloured blocks are variants, coloured by where they stopped; click one to play it.</p>
+          <svg id="timeline" role="img" aria-label="Timeline of the run: CPU and GPU use, evaluator passes and worker processes"></svg>
+        </div>
+        <div class="kpis ovh" id="ovh-kpis"></div>
+        <div class="two">
+          <div class="chartbox" style="padding-bottom:14px">
+            <h3 style="font-size:17px">Setup time per task, and what it bought</h3>
+            <p class="cap2" style="margin:4px 0 12px">Each task's setup pass, split by stage. Setup runs before any variant. A task whose setup fails gets no attempts.</p>
+            <div class="legend" id="su-legend" style="margin:0 0 10px"></div>
+            <div class="hbars" id="su-bars"></div>
+          </div>
+          <div class="chartbox" style="padding-bottom:14px">
+            <h3 style="font-size:17px">Where each variant's generation time went</h3>
+            <p class="cap2" style="margin:4px 0 12px">One row per variant that reached a rollout worker, sorted by time within each task. Hover for the video replay and encode times. Click to play.</p>
+            <div class="legend" id="pv-legend" style="margin:0 0 10px"></div>
+            <div class="hbars" id="pv-bars"></div>
+          </div>
+        </div>
+      </div>
+      <div class="wheels" style="margin-top:18px">
         <div class="wheel-card">
           <svg id="wheel-phase" viewBox="0 0 340 340" role="img" aria-label="Wall-clock time by phase"></svg>
           <div><h3>The whole run, by phase</h3><p class="cap2">Wall-clock time. Phases run one after another, so this adds up to the run's length.</p><div class="wlist" id="wl-phase"></div></div>
@@ -511,6 +581,21 @@ footer { padding-block: 26px 40px; font-size: 12px; color: var(--muted); }
       </div>
       <div class="eyebrow" style="margin:26px 0 8px">Utilization by phase</div>
       <div class="scroll-x chartbox" style="padding:4px 8px"><table class="util" id="util"></table></div>
+      <div id="hot-sec" hidden>
+        <div>
+          <div style="margin-top:18px">
+            <div class="eyebrow" style="margin:8px 0 8px">Hottest functions · self time</div>
+            <p class="cap2" id="hot-intro" style="margin:0 0 10px"></p>
+            <div class="scroll-x chartbox" style="padding:4px 8px"><table class="hot" id="hot"></table></div>
+          </div>
+          <div style="margin-top:22px;max-width:860px">
+            <div class="eyebrow" style="margin:8px 0 8px">By process group</div>
+            <p class="cap2" style="margin:0 0 10px">Profiled time per group of processes, split into Python, native code and waiting. Orchestrators spend their time waiting on the workers they start.</p>
+            <div class="legend" id="pg-legend" style="margin:0 0 10px"></div>
+            <div class="chartbox" style="padding:10px 10px 8px"><div class="hbars pg" id="pg-bars"></div></div>
+          </div>
+        </div>
+      </div>
       <details class="more" id="pre-details">
         <summary>Exact numbers for every step</summary>
         <div class="prof-grid" style="margin-top:6px">
@@ -795,7 +880,7 @@ function onRef(e) {
   else if (r === "profiling") jump("profiling");
 }
 (function author() {
-  if (!AU) return;
+  if (!AU) { document.querySelector('a[href="#notes"]').hidden = true; return; }
   $("#notes").hidden = false;
   const nm = AU.name || "Author";
   $("#au-av").textContent = nm.split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -850,6 +935,20 @@ $("#filters").addEventListener("click", e => {
   if (t.dataset.code) return setFilter({ task: F.task, stage: F.stage, code: null });
 });
 
+// goals and primitive chain, shown under the task name and prompt
+const goalsText = t => (t.goals || (t.object ? [{ object: t.object, relation: t.relation, target: t.target }] : []))
+  .map(g => `${g.object} → ${g.relation || ""} ${g.target || ""}`.replace(/\s+/g, " ").trim()).join("; ");
+const stepKey = s => String(s).toLowerCase().split(/[\s(]/)[0];
+function chainHtml(t, v) {
+  const steps = t.chain?.steps || [];
+  if (!steps.length) return "";
+  // with a variant: steps up to "ran to" are done, that step is where it stopped, the rest never ran
+  let stop = -2;
+  if (v) stop = v.ok ? steps.length : v.metrics?.ran_to === "none" ? -1 : steps.findIndex(s => stepKey(s) === String(v.metrics?.ran_to || "").toLowerCase());
+  const cls = i => !v || stop === -2 ? "" : v.ok || i < stop ? "done" : i === stop ? "stop" : "todo";
+  return `<div class="chain" style="--c:${v ? col(v.st) : "var(--line-2)"}" aria-label="Primitive chain"><span class="lbl">Chain</span>${steps.map((s, i) => `${i ? `<span class="ar">→</span>` : ""}<span class="st ${cls(i)}"${cls(i) === "stop" ? ` title="ran to ${esc(s)}"` : ""}>${esc(s)}</span>`).join("")}</div>`;
+}
+
 function tileFor(v) {
   const b = document.createElement("button");
   b.className = "tile"; b.id = v.anchor; b.dataset.key = v.key;
@@ -882,7 +981,8 @@ function tileFor(v) {
     const note = (I.task_notes || {})[t.scene];
     sec.innerHTML = `<div class="task-head"><div style="min-width:0">
         <h3>${esc(t.scene)} <span>· ${esc(t.task)}</span></h3>
-        <p class="instr">“${esc(t.instruction || "")}”${t.object ? ` <span class="muted mono">${esc(t.object)} → ${esc(t.relation)} ${esc(t.target)}</span>` : ""}</p>
+        <p class="instr">“${esc(t.instruction || "")}”${goalsText(t) ? ` <span class="muted mono">${esc(goalsText(t))}</span>` : ""}</p>
+        ${chainHtml(t)}
         <div class="setup">${setup}${strat}</div>${note ? `<p class="note">${esc(note)}</p>` : ""}</div>
       <div class="task-side"><div class="rate-big"><div class="v" style="color:${ok ? "var(--ok-ink)" : "var(--bad-ink)"}">${Math.round(100 * ok / Math.max(vs.length, 1))}%</div><div class="s">${ok} of ${vs.length} succeeded</div></div>
       ${s0.layout_map ? `<button class="mapbtn" aria-label="Open layout map for ${esc(t.scene)}"><img src="${esc(s0.layout_map)}" alt="Layout map"></button>` : ""}</div></div>
@@ -938,9 +1038,9 @@ function openPlayer(v) {
   const ac = auClip[v.key];
   const note = [(ac ? `<div class="anote"><span class="who">${esc(auFirst)}${ac.file ? ` · ${esc(ac.file)}` : ""}</span>${esc(ac.text)}</div>` : ""),
     ((I.variant_notes || {})[v.key] ? `<p class="note">${esc(I.variant_notes[v.key])}</p>` : "")].join("");
-  $("#pl-why").innerHTML = v.ok
+  $("#pl-why").innerHTML = (v.ok
     ? `<div class="eyebrow">Result</div><div class="code" style="color:var(--ok-ink)">✓ success</div>${note}`
-    : `<div class="eyebrow">Why it failed</div><div class="code">${esc(v.code || "")}</div>${v.message ? `<div class="msg">${v.error_type ? `<span class="muted">${esc(v.error_type)}:</span> ` : ""}${esc(v.message)}</div>` : ""}${note}`;
+    : `<div class="eyebrow">Why it failed</div><div class="code">${esc(v.code || "")}</div>${v.message ? `<div class="msg">${v.error_type ? `<span class="muted">${esc(v.error_type)}:</span> ` : ""}${esc(v.message)}</div>` : ""}${note}`) + chainHtml(v.task, v);
   const m = v.metrics || {};
   const rows = [["Task", `${v.task.scene} · ${v.task.task}`], ["Instruction", v.task.instruction], ["Strategy", v.strategy.name],
     m.ran_to ? ["Ran to", m.ran_to] : null, m.duration_s != null ? ["Time", fmtS(m.duration_s)] : null, m.curobo_s != null ? ["cuRobo", fmtS(m.curobo_s)] : null,
@@ -1100,6 +1200,204 @@ function wheel({ svg, list, center, inner, grouped }) {
   $("#traj-title").textContent = P.trajectory_title || "cuRobo";
   $("#curobo").innerHTML = `<tbody><tr class="g"><td>cuRobo command</td><td class="r">Calls</td><td class="r">Total</td><td class="r">Mean</td></tr>` + (P.curobo || []).map(c => `<tr><td class="mono">${esc(c.command)}</td><td class="r">${c.calls}</td><td class="r">${esc(c.total)}</td><td class="r">${c.mean_ms} ms</td></tr>`).join("") + `</tbody>`;
   $("#vsteps").innerHTML = `<tbody>` + (P.video_steps || []).map(c => `<tr><td>${esc(c.step)}</td><td class="r">${esc(c.total)}</td></tr>`).join("") + `</tbody>`;
+})();
+
+// ---------------- profiler trace (profile_trace.json): timeline, setup cost, per-variant time
+// Colours follow the step wheel's sections: blue = pre-computation (setup, per-variant prep),
+// orange = cuRobo, green = simulation and video; hatched = start-up overhead, greys = the rest.
+const clk = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+const HATCH = "repeating-linear-gradient(135deg, var(--muted) 0 1.5px, var(--sunk) 1.5px 4.5px)";
+const HATCH_CU = "repeating-linear-gradient(135deg, var(--sec-2) 0 1.5px, var(--sunk) 1.5px 4.5px)";
+const legendHtml = items => items.map(([c, l, bg]) => `<span><i style="${bg ? `background:${bg}` : `--c:${c}`}"></i>${esc(l)}</span>`).join("");
+const SETUP_COL = { colliders: "var(--ph-4)", grasp: "var(--sec-1)" };
+const SETUP_NAME = { colliders: "Cook colliders", grasp: "Grasp sampling + shake test", robot: "Bake robot", scene: "Scene graph", base: "Robot base", annotate: "Annotate", occupancy: "Occupancy", dr: "Randomization manifest" };
+(function trace() {
+  const T = R.trace;
+  if (!T) return;
+  $("#trace-sec").hidden = false; $("#tracebox").hidden = true;
+  const D = T.duration_s, S = T.samples;
+  const PASS = { load_scenes: ["Load scenes", 1], sample: ["Sample layouts", 1], previews: ["Layout previews", 1], setup: ["Scene setup", 2],
+    grasp_draw: ["Grasp draw", 6], rollout: ["Trajectory generation", 3], video: ["Video replay", 4], trim: ["Video trimming", 5] };
+  const W = 1100, L = 92, RM = 10, iw = W - L - RM;
+  const x = t => L + (t / D) * iw;
+  const segs = [];
+  let g = `<defs><pattern id="hatch" width="4.5" height="4.5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4.5" height="4.5" style="fill:var(--sunk)"/><line x1="0" y1="0" x2="0" y2="4.5" style="stroke:var(--muted)" stroke-width="1.5"/></pattern>
+    <pattern id="hatch-cu" width="4.5" height="4.5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4.5" height="4.5" style="fill:var(--sunk)"/><line x1="0" y1="0" x2="0" y2="4.5" style="stroke:var(--sec-2)" stroke-width="1.5"/></pattern></defs>`;
+  // utilisation panel: CPU + GPU share one 0-100 % axis
+  let y = 6;
+  const uh = 92, uy = v => y + uh - (v / 100) * uh;
+  [0, 50, 100].forEach(v => g += `<line class="grid-line" x1="${L}" x2="${W - RM}" y1="${uy(v)}" y2="${uy(v)}"/><text x="${L - 8}" y="${uy(v) + 4}" text-anchor="end" font-size="10.5">${v}%</text>`);
+  const path = (k, yf) => S.t.reduce((d, t, i) => S[k][i] == null ? d : d + (d ? "L" : "M") + x(t).toFixed(1) + "," + yf(S[k][i]).toFixed(1), "");
+  g += `<path d="${path("cpu", uy)}" fill="none" style="stroke:var(--ink-2)" stroke-width="1.5" stroke-linejoin="round"/>`;
+  g += `<path d="${path("gpu", uy)}" fill="none" style="stroke:var(--sec-2)" stroke-width="1.5" stroke-linejoin="round"/>`;
+  const utilTop = y;
+  y += uh + 12;
+  // GPU memory: its own small panel (different unit, so never on the % axis)
+  const mh = 28, memMax = Math.max(...S.mem.filter(v => v != null), 0.1), my = v => y + mh - (v / memMax) * mh;
+  g += `<path d="M${x(S.t[0])},${y + mh}L${path("mem", my).slice(1)}L${x(S.t[S.t.length - 1])},${y + mh}Z" style="fill:color-mix(in srgb, var(--ink-2) 20%, transparent);stroke:var(--ink-2)" stroke-width="1"/>`;
+  g += `<line class="axis-line" x1="${L}" x2="${W - RM}" y1="${y + mh}" y2="${y + mh}"/>`;
+  g += `<text class="lane-lbl" x="${L - 8}" y="${y + mh - 2}" text-anchor="end">GPU mem</text><text x="${L + 4}" y="${y + 9}" font-size="10">peak ${memMax.toFixed(1)} GB</text>`;
+  y += mh + 14;
+  const lanesTop = y, LH = 16, LG = 5;
+  const lane = (label, items) => {
+    g += `<text class="lane-lbl" x="${L - 8}" y="${y + LH - 4}" text-anchor="end">${esc(label)}</text>`;
+    items.forEach(it => {
+      const id = segs.push(it) - 1, x0 = x(it.t0), w = Math.max(1, x(it.t0 + it.dur) - x0 - 0.8);
+      g += `<rect class="seg${it.key ? " v" : ""}" data-s="${id}" x="${x0.toFixed(1)}" y="${y}" width="${w.toFixed(1)}" height="${LH}" rx="2" style="fill:${it.fill}"/>`;
+      if (it.label && w > it.label.length * 5.5 + 8) g += `<text x="${(x0 + 4).toFixed(1)}" y="${y + LH - 4.5}" font-size="10" style="fill:${it.ink || "var(--ink)"};pointer-events:none">${esc(it.label)}</text>`;
+    });
+    y += LH + LG;
+  };
+  lane("evaluator", T.passes.map(p => { const [nm, ph] = PASS[p.name] || [p.name, 6];
+    return { t0: p.t0, dur: p.dur, fill: `var(--ph-${ph})`, ink: ph >= 4 ? "var(--bg)" : "var(--ink)", label: p.name === "setup" ? p.scene : p.dur > 40 ? nm : "",
+      tip: `<b>${esc(nm)}</b>${p.scene ? ` · ${esc(p.scene)}` : ""}<br>${fmtS(p.dur)} · ${clk(p.t0)}–${clk(p.t0 + p.dur)}${p.workers ? `<br>${p.workers} workers` : ""}` }; }));
+  lane("setup", T.setup_stages.filter(s => s.dur > 0.3).map(s => ({ t0: s.t0, dur: s.dur, fill: SETUP_COL[s.stage] || "var(--ph-2)", ink: "#fff",
+    label: s.stage === "grasp" ? "grasp + shake" : "", tip: `<b>${esc(SETUP_NAME[s.stage] || s.stage)}</b> · ${esc(s.scene)}<br>${fmtS(s.dur)}` })));
+  const timingRows = tm => Object.entries(tm || {}).map(([k, v]) => `<span class="tm">${esc(k.replace(/_s$/, "").replace("curobo_", "cuRobo "))}</span> ${fmtS(v)}`).join("<br>");
+  ["rollout", "video"].forEach(kind => {
+    const idx = [...new Set(T.shards.filter(s => s.kind === kind).map(s => s.index))].sort((a, b) => a - b);
+    idx.forEach(i => {
+      const items = [];
+      T.shards.filter(s => s.kind === kind && s.index === i).forEach(s => {
+        s.startup.forEach(u => items.push({ t0: u.t0, dur: u.dur, fill: u.name.startsWith("cuRobo") ? "url(#hatch-cu)" : "url(#hatch)",
+          tip: `<b>${esc(u.name)}</b><br>${kind} worker ${i} · ${esc(s.scene)}<br>${fmtS(u.dur)} before its first variant` }));
+        s.variants.forEach(v => {
+          const key = `${s.scene}/${s.strategy}/${v.id}`, vv = varByKey[key], st = vv ? vv.st : byKey.infra;
+          items.push({ t0: v.t0, dur: v.dur, key, fill: kind === "video" ? `color-mix(in srgb, ${col(st)} 55%, var(--surface))` : col(st),
+            label: "v" + parseInt(v.id.slice(1), 10), ink: kind === "video" ? "var(--ink)" : DARK_FILLS.has(st.key) ? "#fff" : "var(--ink)",
+            tip: `<b>${esc(key)}</b><br>${kind === "video" ? "video replay" : "generation"} ${fmtS(v.dur)} · ${vv ? (vv.ok ? "✓ success" : esc(st.name + " · " + (vv.code || ""))) : ""}<br>${timingRows(v.timings)}` });
+        });
+      });
+      lane(`${kind} ${i}`, items);
+    });
+  });
+  const lanesBot = y - LG;
+  // task boundaries
+  T.passes.filter(p => p.name === "setup").forEach(p => g += `<line x1="${x(p.t0)}" x2="${x(p.t0)}" y1="${utilTop}" y2="${lanesBot}" style="stroke:var(--line-2)" stroke-dasharray="2 3" pointer-events="none"/>`);
+  // time axis
+  const step = D > 1800 ? 300 : D > 600 ? 120 : 60;
+  for (let t = 0; t <= D; t += step) g += `<text x="${x(t)}" y="${lanesBot + 16}" text-anchor="middle" font-size="10.5">${t ? Math.round(t / 60) + " min" : "0"}</text>`;
+  g += `<line class="xh" id="tl-xh" x1="0" x2="0" y1="${utilTop}" y2="${lanesBot}"/>`;
+  g += `<rect id="tl-hit" x="${L}" y="${utilTop}" width="${iw}" height="${lanesTop - utilTop - 4}" fill="transparent"/>`;
+  const svg = $("#timeline");
+  svg.setAttribute("viewBox", `0 0 ${W} ${lanesBot + 24}`);
+  svg.innerHTML = g;
+  const xh = $("#tl-xh");
+  const reading = t => {
+    let i = 0, best = Infinity; S.t.forEach((ts, k) => { const d = Math.abs(ts - t); if (d < best) { best = d; i = k; } });
+    const p = T.passes.find(p => t >= p.t0 && t <= p.t0 + p.dur);
+    return `<span class="tm">${clk(t)}</span>${p ? ` · ${esc((PASS[p.name] || [p.name])[0])}${p.scene ? ` · ${esc(p.scene)}` : ""}` : ""}<br>CPU ${S.cpu[i] ?? "–"}% (busiest core ${S.core[i] ?? "–"}%) · GPU ${S.gpu[i] ?? "–"}% · ${S.mem[i] ?? "–"} GB`;
+  };
+  svg.addEventListener("pointermove", e => {
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (p.x < L || p.x > W - RM) { xh.style.opacity = 0; hideTip(); return; }
+    const t = (p.x - L) / iw * D;
+    xh.setAttribute("x1", p.x); xh.setAttribute("x2", p.x); xh.style.opacity = 0.35;
+    const s = e.target.closest(".seg");
+    showTip(s ? `${segs[+s.dataset.s].tip}<br><span class="tm" style="opacity:.7">${reading(t).split("<br>")[1]}</span>` : reading(t), e);
+  });
+  svg.addEventListener("pointerleave", () => { xh.style.opacity = 0; hideTip(); });
+  svg.addEventListener("click", e => { const s = e.target.closest(".seg.v"); if (s && varByKey[segs[+s.dataset.s].key]) openPlayer(varByKey[segs[+s.dataset.s].key]); });
+  $("#tl-legend").innerHTML = legendHtml([["var(--ink-2)", "CPU, all cores"], ["var(--sec-2)", "GPU"], [null, "start-up", HATCH], [null, "cuRobo warm-up", HATCH_CU], ["var(--sec-1)", "grasp + shake test"]]);
+
+  // ---- overhead tiles: every number is from report.json trace.summary or the variant tables
+  const SM = T.summary || {}, kinds = ["rollout", "video"].filter(k => SM[k]);
+  const st = kinds.reduce((a, k) => a + SM[k].startup_s, 0), span = kinds.reduce((a, k) => a + SM[k].span_s, 0);
+  const steps = {}; kinds.forEach(k => Object.entries(SM[k].startup_by_step).forEach(([n, v]) => steps[n] = (steps[n] || 0) + v));
+  const dead = R.tasks.filter(t => VARS.filter(v => v.task === t).every(v => v.st.name === "Setup"));
+  const deadS = dead.reduce((a, t) => a + ((SM.setup_by_task || {})[t.scene]?.dur || 0), 0);
+  const tail = kinds.reduce((a, k) => a + SM[k].idle_tail_s, 0);
+  const nShards = T.shards.length;
+  const tiles = [
+    span ? { l: "Worker start-up", v: `${Math.round(100 * st / span)}%`, s: `${fmtS(st)} of ${fmtS(span)} worker time went to booting before the first variant: ${Object.entries(steps).filter(([, v]) => v > 1).map(([n, v]) => `${n.replace(" (init)", "").replace("Isaac (Kit) boot", "Kit boot").replace("Stage load and physics warm-up", "stage load")} ${fmtS(v)}`).join(" · ")}`, cls: "bad" } : null,
+    dead.length ? { l: "Setup with nothing to show", v: fmtS(deadS), s: `${Math.round(100 * deadS / D)}% of the run, on ${dead.map(t => t.scene).join(", ")}, whose setup failed so no variant ran`, cls: "bad" } : null,
+    SM.isaac_boots ? { l: "Isaac boots", v: String(SM.isaac_boots), s: `${SM.isaac_boots - nShards} during setup, ${nShards} worker processes (one per worker, per task, per pass)` } : null,
+    tail ? { l: "Idle at the batch tail", v: fmtS(tail), s: "summed time finished workers waited for the slowest worker in their batch" } : null,
+  ].filter(Boolean);
+  $("#ovh-kpis").innerHTML = tiles.map(k => `<div class="kpi ${k.cls || ""}"><div class="eyebrow">${esc(k.l)}</div><div class="v">${esc(k.v)}</div><div class="s">${esc(k.s)}</div></div>`).join("");
+
+  // ---- setup per task
+  const order = T.passes.filter(p => p.name === "setup" && p.scene).map(p => p.scene);
+  const smax = Math.max(...order.map(s => SM.setup_by_task[s].dur), 1);
+  $("#su-legend").innerHTML = legendHtml([[SETUP_COL.colliders, SETUP_NAME.colliders], [SETUP_COL.grasp, SETUP_NAME.grasp], ["var(--ph-2)", "other setup steps"]]);
+  $("#su-bars").innerHTML = order.map(sc => {
+    const su = SM.setup_by_task[sc], t = R.tasks.find(t => t.scene === sc), vs = VARS.filter(v => v.task === t);
+    const parts = [["colliders", su.stages.colliders || 0], ["grasp", su.stages.grasp || 0]];
+    parts.push(["other", Math.max(0, su.dur - parts[0][1] - parts[1][1])]);
+    const isDead = vs.length && vs.every(v => v.st.name === "Setup");
+    const out = !t ? "" : isDead ? `<span class="bad">✗ ${esc(vs[0].code || "setup failed")}</span> · no variant ran` : `<span class="good">✓ setup ok</span> · ${vs.length} variants ran, ${vs.filter(v => v.ok).length} succeeded`;
+    const tip = `<b>${esc(sc)}</b> setup ${fmtS(su.dur)}<br>` + Object.entries(su.stages).filter(([, v]) => v >= 0.5).map(([k, v]) => `<span class="tm">${esc(SETUP_NAME[k] || k)}</span> ${fmtS(v)}`).join("<br>");
+    return `<button class="hb" data-scene="${esc(sc)}" data-tip="${esc(tip)}"><span class="nm">${esc(sc)}</span><span class="track">${parts.filter(([, v]) => v > 0).map(([k, v]) => `<span style="--c:${SETUP_COL[k] || "var(--ph-2)"};width:${(100 * v / smax).toFixed(2)}%"></span>`).join("")}</span><span class="tot">${fmtS(su.dur)}</span><span class="out">${out}</span></button>`;
+  }).join("");
+  $("#su-bars").querySelectorAll(".hb").forEach(b => { bindTip(b, b.dataset.tip); b.addEventListener("click", () => { setFilter({ task: b.dataset.scene, stage: null }); jump("task-" + b.dataset.scene); }); });
+
+  // ---- per-variant generation time
+  const PV = [["prep", "Place layout + settle", "var(--sec-1)", tm => (tm.apply_s || 0) + (tm.settle_s || 0)],
+    ["sim", "Physics sim + gripper", "var(--sec-3)", tm => (tm.sim_s || 0) + (tm.gripper_s || 0)],
+    ["plan", "cuRobo plan_grasp + plan_pose", "var(--sec-2)", tm => (tm.curobo_plan_grasp_s || 0) + (tm.curobo_plan_pose_s || 0) + (tm.curobo_detach_held_s || 0)],
+    ["attach", "cuRobo attach_held", "color-mix(in srgb, var(--sec-2) 55%, var(--surface))", tm => tm.curobo_attach_held_s || 0]];
+  $("#pv-legend").innerHTML = legendHtml([...PV.map(p => [p[2], p[1]]), ["var(--line-2)", "other"]]);
+  const vid = {}; T.shards.filter(s => s.kind === "video").forEach(s => s.variants.forEach(v => vid[`${s.scene}/${s.strategy}/${v.id}`] = v));
+  const rows = T.shards.filter(s => s.kind === "rollout").flatMap(s => s.variants.map(v => ({ ...v, key: `${s.scene}/${s.strategy}/${v.id}`, scene: s.scene })));
+  const pmax = Math.max(...rows.map(r => r.dur), 1);
+  let ph = "";
+  [...new Set(rows.map(r => r.scene))].forEach(sc => {
+    ph += `<div class="hb grp">${esc(sc)}</div>`;
+    rows.filter(r => r.scene === sc).sort((a, b) => b.dur - a.dur).forEach(r => {
+      const vv = varByKey[r.key], stg = vv ? vv.st : byKey.infra;
+      const parts = PV.map(p => [p[2], p[1], p[3](r.timings)]);
+      parts.push(["var(--line-2)", "other", Math.max(0, r.dur - parts.reduce((a, p) => a + p[2], 0))]);
+      const vt = vid[r.key]?.timings;
+      const tip = `<b>${esc(r.key)}</b> · ${vv?.ok ? "✓ success" : esc(stg.name + " · " + (vv?.code || ""))}<br>generation ${fmtS(r.dur)}<br>` + parts.filter(p => p[2] >= 0.05).map(p => `<span class="tm">${esc(p[1])}</span> ${fmtS(p[2])}`).join("<br>") +
+        (vt ? `<br><br>video: replay ${fmtS(vt.replay_s)} · encode ${fmtS(vt.encode_s)}` : "");
+      ph += `<button class="hb" data-key="${esc(r.key)}" data-tip="${esc(tip)}"><span class="nm"><i class="dot" style="--c:${col(stg)}"></i>${esc(r.id)}<small>${esc(vv?.ok ? "success" : vv?.code || "")}</small></span><span class="track">${parts.filter(p => p[2] > 0.02).map(p => `<span style="--c:${p[0]};width:${(100 * p[2] / pmax).toFixed(2)}%"></span>`).join("")}</span><span class="tot">${fmtS(r.dur)}</span></button>`;
+    });
+  });
+  $("#pv-bars").innerHTML = ph;
+  $("#pv-bars").querySelectorAll(".hb[data-key]").forEach(b => { bindTip(b, b.dataset.tip); b.addEventListener("click", () => varByKey[b.dataset.key] && openPlayer(varByKey[b.dataset.key])); });
+})();
+
+// ---------------- cProfile tables from the PDF ("Hottest functions", "By process group")
+(function hot() {
+  const P = R.profiling || {};
+  const hf = P.hot_functions || [], pg = P.process_groups || [];
+  if (!hf.length && !pg.length) return;
+  $("#hot-sec").hidden = false;
+  $("#hot-intro").textContent = (P.hot_intro || "").split(/(?<=\.)\s/).slice(0, 3).join(" ");
+  // the PDF lists one row per process for bound methods; merge them
+  const merged = [];
+  hf.forEach(f => {
+    const k = f.function_key + "|" + f.group;
+    let m = merged.find(x => x.k === k);
+    if (!m) merged.push(m = { k, ...f, rows: 0, self_s: 0, share_pct: 0, calls: 0 });
+    m.rows++; m.self_s += f.self_s || 0; m.share_pct += f.share_pct || 0; m.calls += f.calls || 0;
+  });
+  merged.sort((a, b) => b.self_s - a.self_s);
+  const smax = Math.max(...merged.map(m => m.share_pct), 1);
+  $("#hot").innerHTML = `<thead><tr><th>Function</th><th class="r">Share</th><th class="r">Self</th><th class="r">Calls</th><th class="r">Per call</th><th>Kind</th></tr></thead><tbody>` +
+    merged.map(m => `<tr><td class="fn">${esc(m.function_key)}${m.rows > 1 ? ` <span class="muted">· ${m.rows} processes</span>` : ""}<small>${esc(m.group)}${m.called_from.length ? ` · ← ${esc(m.called_from.slice(0, 2).join(" ← "))}` : ""}</small></td>
+      <td class="r"><span class="sh"><span class="m"><span style="width:${100 * m.share_pct / smax}%"></span></span><span>${m.share_pct.toFixed(1)}%</span></span></td>
+      <td class="r">${esc(fmtS(m.self_s))}</td><td class="r">${m.calls.toLocaleString()}</td><td class="r">${m.rows > 1 ? (m.calls ? (1000 * m.self_s / m.calls).toFixed(2) + " ms" : "–") : esc(m.per_call)}</td><td><span class="kind">${esc(m.kind)}</span></td></tr>`).join("") + `</tbody>`;
+  const PGC = [["python_pct", "Python", "var(--ph-5)"], ["native_pct", "native", "var(--ph-3)"], ["wait_pct", "waiting", "var(--line-2)"]];
+  $("#pg-legend").innerHTML = legendHtml(PGC.map(p => [p[2], p[1]]));
+  const pgs = pg.slice().sort((a, b) => b.time_s - a.time_s);
+  const top = pgs.filter(p => p.time_s >= 5), rest = pgs.filter(p => p.time_s < 5);
+  $("#pg-bars").innerHTML = top.map(p => `<div class="hb" data-tip="${esc(`<b>${esc(p.group)}</b><br>${p.processes} process${p.processes === 1 ? "" : "es"} · ${esc(p.time)}<br>Python ${p.python_pct}% · native ${p.native_pct}% · waiting ${p.wait_pct}%`)}">
+      <span class="nm" title="${esc(p.group)}">${esc(p.group)}${p.orchestrates ? "<small>orchestrates</small>" : ""}</span><span class="track">${PGC.map(c => p[c[0]] ? `<span style="--c:${c[2]};width:${p[c[0]]}%"></span>` : "").join("")}</span><span class="tot">${esc(p.time)}</span></div>`).join("") +
+    (rest.length ? `<p class="cap2" style="margin:6px 4px 0">${rest.length} smaller groups (scene setup steps, rollout and video worker shells) add up to ${fmtS(rest.reduce((a, p) => a + p.time_s, 0))}.</p>` : "");
+  $("#pg-bars").querySelectorAll(".hb").forEach(b => bindTip(b, b.dataset.tip));
+})();
+
+// ---------------- profiling notes from insights
+(function profNotes() {
+  const list = I.profiling_takeaways || [];
+  if (!list.length) return;
+  const host = document.createElement("div");
+  host.innerHTML = `<h3 style="font-size:19px;margin:26px 0 12px">What the profiler says to change</h3><div class="takeaways" style="counter-reset:tk">${list.map(t => `<article class="tk"><div class="tk-top"><span class="rank">${esc(t.kind || "run time")}</span>${t.saves ? `<span class="stake">${esc(t.saves)}</span>` : ""}</div><h3>${esc(t.title)}</h3><p>${esc(t.body)}</p>${(t.refs || []).length ? `<div class="refs">${refBtns(t.refs)}</div>` : ""}</article>`).join("")}</div>`;
+  const anchor = $("#trace-sec").hidden ? $("#bneck") : $("#trace-sec");
+  anchor.after(host);
+  host.addEventListener("click", onRef);
 })();
 
 // ---------------- checks + glossary

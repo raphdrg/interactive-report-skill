@@ -54,6 +54,14 @@ uv run --with pymupdf python $SKILL_DIR/scripts/extract_report.py $RUN
 python3 $SKILL_DIR/scripts/prepare_media.py $RUN          # needs ffmpeg/ffprobe
 ```
 
+If the run folder has a `profile_trace.json` (the profiler's Chrome trace; it also opens in
+ui.perfetto.dev), the extractor reads it into `report.json["trace"]`: 1 Hz CPU/GPU/VRAM
+samples, the evaluator's passes, setup stages, and every rollout and video worker with its
+start-up and per-variant timings, plus derived totals in `trace.summary`. The page then
+draws an interactive timeline in place of the PDF's raster CPU/GPU chart, a setup-per-task
+chart, a per-variant time breakdown, and the PDF's "Hottest functions" and "By process
+group" cProfile tables.
+
 The extractor prints its counts and its **checks**. Read them all. They are
 cross-checks between the PDF's own tables (tiles against variant rows, the "most
 common failures" table against per-task counts, thumbnails reused across tasks,
@@ -66,6 +74,9 @@ If there's no `uv`, use `python3 -m venv` in the scratchpad and `pip install pym
 and compare it with `interactive/raw/page*.txt`:
 - the variant count per task matches the strategy header (`… of 10`)
 - every variant has a `stage`, and every failure has a `code` and `message`
+- each task has its `goals` (one per object in the prompt) and, if the report prints one,
+  its primitive `chain`. The page shows the chain under the task name and prompt, and in
+  the player it marks the step each variant ran to
 - `profiling.phases`, `precompute_steps` and `curobo` are filled in
 
 The parser keys on section titles and table headers, not page numbers. If the
@@ -126,6 +137,8 @@ Follow `references/insights.md` for the schema and the writing rules. In short:
 - `takeaways`: 4–7 fixes ranked by **attempts they could win back**. Each says what
   happened, the likely cause, and what to try. `refs` point at variant keys
   (`scene/strategy/v0000`), task scenes, or `"profiling"`.
+- `profiling_takeaways`: when there is a profiler trace, 3–6 run-time fixes ranked by time
+  saved, each with a `saves` figure. See "Reading the profiler" in `references/insights.md`.
 - `task_notes`, `variant_notes`, `featured`: short and specific.
 - PDF or parser problems are not insights. Report them to the user in chat.
 
@@ -172,8 +185,11 @@ place where their notes and the data disagree. Ask them what to change.
   status green and always carries a ✓ and a label, never colour alone. If you add a
   stage, re-run the dataviz validator on the new order rather than picking a hue by eye.
 - Every chart has a hover tooltip and a click-through to the matching videos.
-- Charts the PDF only has as rasters (the CPU/GPU trace, layout maps) are shown as
-  images and labelled as such. Don't redraw them from guessed data. If the user
+- Charts the PDF only has as rasters (layout maps, and the CPU/GPU trace when there is no
+  `profile_trace.json`) are shown as images and labelled as such.
+- Profiler charts share one colour rule with the step wheel: blue is pre-computation,
+  orange is cuRobo, green is simulation and video, hatching is start-up overhead, greys are
+  the rest. GPU memory gets its own panel, never a second axis. Don't redraw them from guessed data. If the user
   wants them interactive, the fix is for the generator to export the samples (see below).
 - Profiling shows two wheels. The first is wall-clock time by phase, which adds up to the
   run. The second covers every pre-computation, cuRobo and video step: the inner ring is
@@ -187,7 +203,7 @@ build overwrites it.
 
 ## Worth suggesting to the user once
 
-The best upgrade is upstream. If `trajectory-gen-eval` also wrote a `report.json`
-with the variant rows, layout coordinates and per-second CPU/GPU samples, the
-extractor would be a passthrough. The layout maps and the utilisation trace would
-then become real interactive charts instead of images.
+The best upgrade is upstream. `profile_trace.json` already gives the per-second
+samples and timings. If `trajectory-gen-eval` also wrote a `report.json` with the variant
+rows and layout coordinates, the extractor would be a passthrough and the layout maps would
+become interactive charts instead of images.

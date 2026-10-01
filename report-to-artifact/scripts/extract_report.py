@@ -258,6 +258,178 @@ def parse_precompute(lines, out):
         out["checks"].append({"level": "error", "message": "pre-computation table not found; see raw/ text"})
 
 
+def rows_by_first_col(table, pattern):
+    """Rows that start where column 0 matches `pattern`; wrapped lines join the row above."""
+    regions, lines = table["regions"], table["lines"]
+    starts = sorted(l["y0"] for l in lines if col_of(l, regions) == 0 and re.fullmatch(pattern, l["text"].strip()))
+    rows = []
+    for i, y in enumerate(starts):
+        y_next = starts[i + 1] if i + 1 < len(starts) else 10_000
+        cells = [[] for _ in regions]
+        for l in lines:
+            if y - 1 <= l["y0"] < y_next - 1:
+                cells[col_of(l, regions)].append(l)
+        rows.append(cells)
+    return rows
+
+
+ADDR = re.compile(r"\s+at 0x[0-9a-f]+")
+
+
+def parse_hot_functions(table, out):
+    """'Hottest functions' (cProfile self time). May continue over several pages."""
+    prof = out.setdefault("profiling", {})
+    h = {name.split()[0]: i for i, name in enumerate(table["header"])}
+    for cells in rows_by_first_col(table, r"\d+"):
+        fn_lines = cells[h["Function"]]
+        own = [l for l in fn_lines if l["color"] != HEADER_GREY]
+        chain = " ".join(l["text"].strip() for l in fn_lines if l["color"] == HEADER_GREY)
+        func = cell_text(own)
+        prof.setdefault("hot_functions", []).append({
+            "rank": int(cell_text(cells[h["#"]])),
+            "share_pct": num(cell_text(cells[h["Share"]])),
+            "self": cell_text(cells[h["Self"]]), "self_s": to_seconds(cell_text(cells[h["Self"]])),
+            "calls": int((num(cell_text(cells[h["Calls"]]).replace(",", "")) or 0)),
+            "per_call": cell_text(cells[h["Per"]]),
+            "kind": cell_text(cells[h["Kind"]]),
+            "group": cell_text(cells[h["Process"]]),
+            "function": func,
+            # the PDF keys bound methods by address, so one function shows once per process
+            "function_key": ADDR.sub("", func).strip("<>").replace("function ", ""),
+            "called_from": [c.strip() for c in chain.split("←") if c.strip()],
+        })
+
+
+def parse_process_groups(table, out):
+    prof = out.setdefault("profiling", {})
+    for r in simple_rows(table):
+        c = [cell_text(x) for x in r]
+        if not c[0] or not c[2]:
+            continue
+        name = c[0]
+        role = None
+        m = re.match(r"(.+?)\s*\((orchestrates)\)$", name)
+        if m:
+            name, role = m.group(1), m.group(2)
+        prof.setdefault("process_groups", []).append({
+            "group": name, "orchestrates": role == "orchestrates", "processes": int(num(c[1]) or 0),
+            "time": c[2], "time_s": to_seconds(c[2]),
+            "python_pct": num(c[3]), "native_pct": num(c[4]), "wait_pct": num(c[5]),
+        })
+
+
+def parse_trace(path, out):
+    """profile_trace.json (Chrome trace format) -> report.json["trace"].
+
+    Keeps what the page draws (1 Hz machine samples, evaluator passes, setup stages,
+    rollout/video worker shards with their start-up and per-variant timings) and
+    derives the totals the notes quote. The function-profiler process tree (pid 3)
+    is left out: its spans are sampled coarsely and are not exact timings.
+    """
+    d = json.loads(Path(path).read_text())
+    ev = d["traceEvents"] if isinstance(d, dict) else d
+    unit = 1e6  # Chrome trace ts/dur are microseconds
+    pname = {e["pid"]: e["args"]["name"] for e in ev if e.get("ph") == "M" and e["name"] == "process_name"}
+    tname = {(e["pid"], e["tid"]): e["args"]["name"] for e in ev if e.get("ph") == "M" and e["name"] == "thread_name"}
+    X = [e for e in ev if e.get("ph") == "X"]
+    r1 = lambda v: round(v, 2)
+    scene_of = lambda case: case.split("/")[1].split()[0] if case and "/" in case else None
+
+    by_pid = lambda name: next((p for p, n in pname.items() if n == name), None)
+    ev_pid, mach_pid = by_pid("Evaluator"), by_pid("Machine")
+    tid_of = lambda name: next((t for (p, t), n in tname.items() if p == ev_pid and n == name), None)
+    passes_tid, stages_tid, boots_tid = tid_of("passes"), tid_of("setup stages"), tid_of("Isaac boots")
+
+    tr = {"source": Path(path).name, "passes": [], "setup_stages": [], "isaac_boots": [], "shards": []}
+    run = next((e for e in X if e["pid"] == ev_pid and e["tid"] == passes_tid and e["name"] == "run"), None)
+    tr["duration_s"] = r1(run["dur"] / unit) if run else r1(max(e["ts"] + e.get("dur", 0) for e in X) / unit)
+    for e in sorted((e for e in X if e["pid"] == ev_pid and e["tid"] == passes_tid and e["name"] != "run"), key=lambda e: e["ts"]):
+        a = e.get("args", {})
+        tr["passes"].append({"name": e["name"], "t0": r1(e["ts"] / unit), "dur": r1(e["dur"] / unit),
+                             "scene": scene_of(a.get("case")), "strategy": a.get("strategy"),
+                             "workers": a.get("workers")})
+    for e in sorted((e for e in X if e["pid"] == ev_pid and e["tid"] == stages_tid), key=lambda e: e["ts"]):
+        tr["setup_stages"].append({"stage": e["name"], "scene": scene_of(e["args"].get("case")),
+                                   "t0": r1(e["ts"] / unit), "dur": r1(e["dur"] / unit)})
+    for e in sorted((e for e in X if e["pid"] == ev_pid and e["tid"] == boots_tid), key=lambda e: e["ts"]):
+        tr["isaac_boots"].append({"step": e["name"], "scene": scene_of(e["args"].get("case")),
+                                  "t0": r1(e["ts"] / unit), "dur": r1(e["dur"] / unit)})
+    # worker shards: one process per (kind, shard, task)
+    for pid, name in sorted(pname.items()):
+        m = re.match(r"(\w+)\.shard(\d+)\s*·\s*(.+)", name)
+        if not m:
+            continue
+        kind, idx, path_ = m.group(1), int(m.group(2)), m.group(3).split("/")
+        evs = [e for e in X if e["pid"] == pid]
+        lane = lambda t: [e for e in evs if tname.get((pid, e["tid"])) == t]
+        su = {e["name"]: e for e in lane("start-up")}
+        segs = []  # non-overlapping start-up segments in pipeline order, named as the PDF does
+        if "python start-up + imports" in su:
+            e = su["python start-up + imports"]; segs.append(("Python start-up and imports", e["ts"], e["dur"]))
+        if "open_session" in su:
+            os_ = su["open_session"]; kb = su.get("kit_boot")
+            if kb:
+                segs.append(("Isaac (Kit) boot", kb["ts"], kb["dur"]))
+                segs.append(("Stage load and physics warm-up", kb["ts"] + kb["dur"], os_["ts"] + os_["dur"] - kb["ts"] - kb["dur"]))
+            else:
+                segs.append(("Isaac session", os_["ts"], os_["dur"]))
+        for k, label in (("curobo_spawn", "cuRobo worker start"), ("curobo_warmup", "cuRobo warm-up (init)")):
+            if k in su:
+                segs.append((label, su[k]["ts"], su[k]["dur"]))
+        variants = [{"id": e["name"], "t0": r1(e["ts"] / unit), "dur": r1(e["dur"] / unit),
+                     "timings": {k.replace("curobo ", "curobo_").replace(" s", "_s"): round(v, 3) for k, v in e.get("args", {}).items()}}
+                    for e in sorted(lane("variants"), key=lambda e: e["ts"])]
+        t0 = min(e["ts"] for e in evs) / unit
+        t1 = max(e["ts"] + e["dur"] for e in evs) / unit
+        tr["shards"].append({"kind": kind, "index": idx, "scene": path_[1] if len(path_) > 1 else None,
+                             "task": path_[2] if len(path_) > 2 else None, "strategy": path_[3] if len(path_) > 3 else None,
+                             "t0": r1(t0), "t1": r1(t1),
+                             "startup": [{"name": n, "t0": r1(ts / unit), "dur": r1(du / unit)} for n, ts, du in segs if du > 0],
+                             "variants": variants})
+    # machine samples at 1 Hz, merged by timestamp
+    samp = {}
+    for e in ev:
+        if e.get("ph") != "C" or e.get("pid") != mach_pid:
+            continue
+        s = samp.setdefault(round(e["ts"] / unit), {})
+        a = e["args"]
+        if e["name"].startswith("CPU"):
+            s["cpu"], s["core"] = a.get("all cores"), a.get("busiest core")
+        elif e["name"].startswith("GPU %"):
+            s["gpu"] = next(iter(a.values()))
+        elif e["name"].startswith("GPU memory"):
+            s["mem"] = next(iter(a.values()))
+    ts = sorted(samp)
+    tr["samples"] = {"t": ts, **{k: [samp[t].get(k) for t in ts] for k in ("cpu", "core", "gpu", "mem")}}
+
+    # ---- derived totals (what the notes quote)
+    S = {}
+    for kind in sorted({s["kind"] for s in tr["shards"]}):
+        sh = [s for s in tr["shards"] if s["kind"] == kind]
+        st = sum(x["dur"] for s in sh for x in s["startup"])
+        wk = sum(v["dur"] for s in sh for v in s["variants"])
+        span = sum(s["t1"] - s["t0"] for s in sh)
+        S[kind] = {"shards": len(sh), "startup_s": r1(st), "work_s": r1(wk), "span_s": r1(span),
+                   "startup_pct": round(100 * st / span) if span else None,
+                   "startup_by_step": {n: r1(sum(x["dur"] for s in sh for x in s["startup"] if x["name"] == n))
+                                       for n in dict.fromkeys(x["name"] for s in sh for x in s["startup"])}}
+        # tail: per batch, how long finished workers sat idle waiting for the slowest one
+        tails = []
+        for key in dict.fromkeys((s["scene"], s["strategy"]) for s in sh):
+            b = [s for s in sh if (s["scene"], s["strategy"]) == key]
+            end = max(s["t1"] for s in b)
+            tails.append(sum(end - s["t1"] for s in b))
+        S[kind]["idle_tail_s"] = r1(sum(tails))
+    setup = {}
+    for p in tr["passes"]:
+        if p["name"] == "setup" and p["scene"]:
+            setup[p["scene"]] = {"dur": p["dur"], "stages": {x["stage"]: x["dur"] for x in tr["setup_stages"] if x["scene"] == p["scene"]}}
+    S["setup_by_task"] = setup
+    S["isaac_boots"] = len(tr["isaac_boots"]) + sum(1 for s in tr["shards"] if any("Kit" in x["name"] or "session" in x["name"] for x in s["startup"]))
+    tr["summary"] = S
+    out["trace"] = tr
+
+
 def parse_variant_rows(table):
     """Variant tables: one row per v#### in the first column."""
     regions, lines = table["regions"], table["lines"]
@@ -318,17 +490,66 @@ def parse_variant(cells, header):
             "videos": videos}
 
 
+CHAIN_LABEL = re.compile(r"^\s*(primitive chain|primitives|chain|plan)\s*[:·]\s*", re.I)
+CHAIN_SEP = re.compile(r"\s*(?:→|->|›|»|⟶)\s*")
+
+
+def parse_goals(spec):
+    """'bagel_00 → on top of plate_large; bagel_06 → inside bin' -> [{object, relation, target}]."""
+    goals = []
+    for part in [p.strip() for p in spec.split(";") if p.strip()]:
+        if "→" not in part:
+            continue
+        obj, rest = [x.strip() for x in part.split("→", 1)]
+        words = rest.split()
+        goals.append({"object": obj, "relation": " ".join(words[:-1]) or None, "target": words[-1] if words else None})
+    return goals
+
+
+def parse_chain(lines, instr, end_y):
+    """The task's primitive chain, printed in the task header (below the prompt).
+
+    Accepts a labelled line ('chain: a → b → c', 'primitives · a › b') or any header
+    line other than the prompt with at least two step separators. Wrapped lines that
+    continue a chain (start or end on a separator) are joined.
+    """
+    y_from = instr["y0"] if instr else 0
+    head = [l for l in lines if y_from <= l["y0"] < end_y and l is not instr and not l["text"].startswith("“")
+            and l["size"] < 14]
+    for i, l in enumerate(head):
+        txt = l["text"].strip()
+        labelled = bool(CHAIN_LABEL.match(txt))
+        if not labelled and len(CHAIN_SEP.findall(txt)) < 2:
+            continue
+        parts = [txt]
+        for nxt in head[i + 1:]:
+            if not (CHAIN_SEP.search(parts[-1][-3:] + " ") or CHAIN_SEP.match(nxt["text"])) or nxt["y0"] - l["y0"] > 40:
+                break
+            parts.append(nxt["text"].strip())
+        joined = CHAIN_LABEL.sub("", " ".join(parts))
+        steps = [s.strip(" ·,") for s in CHAIN_SEP.split(joined) if s.strip(" ·,")]
+        if len(steps) >= 2 or labelled:
+            return {"text": joined.strip(), "steps": steps}
+    return None
+
+
 def parse_task_header(lines):
     title = section_title(lines)
     scene, task = [p.strip() for p in title.split("·", 1)]
     t = {"scene": scene, "task": task, "strategies": []}
     instr = next((l for l in lines if l["text"].startswith("“")), None)
     if instr:
-        m = re.match(r"“(.+?)”\s*\((.+?)\s*→\s*(\w+)\s+(.+)\)", instr["text"])
-        if m:
-            t.update(instruction=m.group(1), object=m.group(2), relation=m.group(3), target=m.group(4))
+        m = re.match(r"“(.+?)”\s*\((.+)\)\s*$", instr["text"].strip())
+        goals = parse_goals(m.group(2)) if m else []
+        if m and goals:
+            t.update(instruction=m.group(1), goals=goals, object=goals[0]["object"],
+                     relation=goals[0]["relation"], target=goals[0]["target"])
         else:
-            t["instruction"] = instr["text"]
+            t["instruction"] = instr["text"].strip("“” ")
+    strat = next((l for l in lines if l["bold"] and l["size"] == 12.0 and re.search(r"\d+ succeeded", l["text"])), None)
+    chain = parse_chain(lines, instr, strat["y0"] if strat else FOOTER_Y)
+    if chain:
+        t["chain"] = chain
     setup = [l for l in lines if l["text"].startswith("setup ")]
     if setup:
         s0 = setup[0]
@@ -426,6 +647,14 @@ def main(run_dir):
         if any(t == "How to read this report" for t in texts):
             parse_glossary(lines, out)
             continue
+        prof_tables = [t for t in find_tables(lines) if t["header"][:2] in (["#", "Share"], ["Process group", "Processes"])]
+        if prof_tables:
+            for t in prof_tables:
+                (parse_hot_functions if t["header"][0] == "#" else parse_process_groups)(t, out)
+            if title == "Hottest functions":
+                intro = [l["text"].strip() for l in lines if l["size"] == 9.0 and l["y0"] < 110]
+                out["profiling"]["hot_intro"] = " ".join(intro)
+            continue
 
         # task pages (and their continuation pages)
         if title and "·" in title and any(t.startswith("“") for t in texts):
@@ -515,6 +744,37 @@ def main(run_dir):
         rel = f.relative_to(run_dir).as_posix()
         if rel not in listed:
             out["checks"].append({"level": "info", "kind": "unlisted_video", "message": f"{rel} is on disk but not in the PDF"})
+
+    no_chain = [t["scene"] for t in out["tasks"] if not t.get("chain")]
+    if no_chain:
+        out["checks"].append({"level": "info", "kind": "no_chain",
+                              "message": f"No primitive chain found on the task page for {', '.join(no_chain)}; the page "
+                                         f"shows the prompt without one. See raw/ text if the report should have it."})
+    for t in out["tasks"]:
+        steps = [s.lower() for s in (t.get("chain") or {}).get("steps", [])]
+        ran = {v["metrics"].get("ran_to") for s in t["strategies"] for v in s["variants"]} - {None, "none"}
+        off = sorted(r for r in ran if steps and not any(st == r.lower() or st.startswith(r.lower() + "(") or st.split()[0] == r.lower() for st in steps))
+        if off:
+            out["checks"].append({"level": "warn", "message": f"{t['scene']}: variants ran to {', '.join(off)}, which is not a step of its chain ({t['chain']['text']})"})
+
+    hot = out.get("profiling", {}).get("hot_functions", [])
+    dup = Counter(f["function_key"] for f in hot)
+    for k, n in dup.items():
+        if n > 1 and k != next(f["function"] for f in hot if f["function_key"] == k):
+            out["checks"].append({"level": "info", "kind": "hot_functions_split",
+                                  "message": f"'Hottest functions' lists {k} {n} times, once per process, because the PDF keys "
+                                             f"it by memory address. Together those rows are "
+                                             f"{sum(f['self_s'] for f in hot if f['function_key'] == k):.1f} s. The page merges them."})
+    trace_path = run_dir / "profile_trace.json"
+    if trace_path.exists():
+        parse_trace(trace_path, out)
+        tr = out["trace"]
+        if h.get("wall_clock_s") and abs(tr["duration_s"] - h["wall_clock_s"]) > 60:
+            out["checks"].append({"level": "warn", "message": f"profile_trace.json covers {tr['duration_s']:.0f} s but the PDF's wall clock is {h['wall_clock_s']:.0f} s"})
+        traced = {(s["scene"], v["id"]) for s in tr["shards"] if s["kind"] == "rollout" for v in s["variants"]}
+        moved = {(t["scene"], v["id"]) for t in out["tasks"] for s in t["strategies"] for v in s["variants"] if v["videos"]}
+        if moved - traced:
+            out["checks"].append({"level": "info", "message": f"{len(moved - traced)} variants with videos have no rollout span in profile_trace.json"})
 
     (out_dir / "report.json").write_text(json.dumps(out, indent=2, ensure_ascii=False))
     print(f"wrote {out_dir / 'report.json'}")

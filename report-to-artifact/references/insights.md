@@ -17,6 +17,13 @@ The only hand-written input. Every field is optional; the page hides what's miss
   "task_notes":    { "<scene>": "one sentence on what dominates this task" },
   "variant_notes": { "<scene>/<strategy>/<vid>": "what to look for in this clip" },
   "featured":      ["<scene>/<strategy>/<vid>"],      // flagged tiles: successes and must-watch clips, ≤ 4
+  "profiling_takeaways": [{        // run-time fixes, shown in the profiling section; needs profile_trace.json or the cProfile tables
+    "kind": "worker start-up",       // short label: fail fast, worker start-up, shake test, pipelining, cuRobo, evaluator
+    "title": "Boot each worker once, not once per task and pass",
+    "saves": "≈150 s of wall clock",  // say wall clock or worker time; summed worker time is not wall time
+    "body": "What the trace shows → why → what to change. Real numbers from report.json trace/profiling.",
+    "refs": ["profiling", "<scene>", "<scene>/<strategy>/<vid>"]
+  }],
   "takeaways_title": "Also in the data",            // optional; use this title when author notes exist
   "takeaways_sub": "Smaller things the numbers show that the notes above don't cover.",
 
@@ -52,7 +59,25 @@ setup fix unblocks everything downstream. Count honestly:
   plus pre-place reachability on the same task).
 - Infrastructure failures that happened late (`ran to lower`) are lost near-successes.
   Check the video and say so.
-- Put a profiling or run-time item last, without `attempts`.
+- Put a profiling or run-time item last, without `attempts`. When the run has a
+  `profile_trace.json`, put run-time fixes in `profiling_takeaways` instead, ranked by
+  time saved.
+
+## Reading the profiler
+
+With `report.json["trace"]`, look for:
+- **Setup spent on tasks that produced nothing.** `summary.setup_by_task` against tasks
+  whose variants all stopped in Setup. A check that fails after setup (like
+  `object_not_tracked`) and could run before it is a direct saving.
+- **Start-up against work.** `summary.<kind>.startup_pct` and `startup_by_step`. In wall
+  clock, the gap between a rollout/video pass's `t0` and its first variant's `t0`.
+- **Serial passes.** Setup of the next task waiting on rollout and video of this one, with
+  the GPU mostly idle (`samples` averaged over each pass).
+- **Expensive failures.** Per-variant `timings`: failed plans that burn more cuRobo time
+  than successes. Unusual per-call costs (`attach_held` against `plan_pose`).
+- **The cProfile tables.** Merge `hot_functions` by `function_key`. Large Python self
+  time in an orchestrator that should only wait suggests a busy-poll loop.
+Keep wall clock and summed worker time apart in every sentence.
 
 ## Writing
 
